@@ -1,0 +1,70 @@
+﻿
+<nav class="menu navbar">
+    <div style="width:60%; display:inline-block;">
+        <a class="dropbtn" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+        <div class="dropdown">
+            <button class="dropbtn">Artyści</button>
+            <div class="dropdown-content">
+                @foreach (var artist in (IEnumerable<MusicCollection.Models.Artist>)ViewData["Artists"])
+                {
+                    <a class="menu-link" href="@Url.Action("ArtistAlbums", "Home", new { artistName = artist.Name })">@artist.Name</a>
+                }
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="dropbtn">Typy</button>
+            <div class="dropdown-content">
+                @foreach (var type in (IEnumerable<MusicCollection.Models.Type>)ViewData["Types"])
+                {
+                    <a class="menu-link" href="@Url.Action("TypeAlbums", "Home", new { typeName = type.Name })">@type.Name</a>
+                }
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="dropbtn">Gatunki</button>
+            <div class="dropdown-content">
+                @foreach (var category in (IEnumerable<MusicCollection.Models.Category>)ViewData["Categories"])
+                {
+                    <a class="menu-link" href="@Url.Action("CategoryAlbums", "Home", new { categoryName = category.Name })">@category.Name</a>
+                }
+            </div>
+        </div>
+        <a href="@Url.Action("RecentAlbums", "Home")" class="dropbtn">Ostatnio dodane</a>
+        <a href="@Url.Action("Stats", "Home")" class="dropbtn">Statystyki</a>
+    </div>
+
+    <div style="vertical-align: top; width: 40%; display: inline-block; text-align:right;">
+        @using (Html.BeginForm("Search", "Home"))
+        {
+            @Html.TextBox("text", null, new { @class = "textbox" })
+            <button type="submit" class="dropbtn">Wyszukaj</button>
+        }
+    </div>
+</nav>
+
+<script>
+    // Funkcja wywoływana po kliknięciu na obrazek
+    function showEnlargedImage(imageSrc) {
+        // Tworzenie kontenera obrazka powiększonego
+        var enlargedImageContainer = document.createElement("div");
+        enlargedImageContainer.classList.add("enlarged-image-container");
+
+        // Tworzenie obrazka
+        var enlargedImage = document.createElement("img");
+        enlargedImage.src = imageSrc;
+        enlargedImage.classList.add("enlarged-image");
+
+        // Dodanie obrazka do kontenera
+        enlargedImageContainer.appendChild(enlargedImage);
+
+        // Dodanie kontenera do body strony
+        document.body.appendChild(enlargedImageContainer);
+
+        // Obsługa kliknięcia poza obrazkiem, aby go ukryć
+        enlargedImageContainer.onclick = function () {
+            document.body.removeChild(enlargedImageContainer);
+        };
+    }
+</script>

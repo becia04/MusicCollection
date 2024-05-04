@@ -1,0 +1,33 @@
+﻿@model IEnumerable<MusicCollection.Models.Album>
+
+
+@{
+    var albumsByCategory = Model.GroupBy(a => a.Category.Name);
+    ViewBag.Title = Model.FirstOrDefault()?.Category?.Name;
+}
+
+<h1>@Model.FirstOrDefault()?.Category?.Name</h1>
+
+
+<div>
+    <table>
+        @foreach (var album in Model)
+        {
+            <tr>
+                <td>
+                    <img src="@album.Poster" class="imgbtn" height="200" width="200" alt="@album.Title" onclick="showEnlargedImage('@album.Poster')" />
+                </td>
+                <td>
+                    <h2>@album.Title</h2>
+                    <h3>@album.Artist.Name</h3>
+
+
+                    <ul class="list-group bg-transparent list-group-light" style="border: none;">
+                        <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@album.Type.Name</li>
+                        <li class="list-group-item bg-transparent" style="border: none;"><b>Rok wydania: </b>@album.PublishDate</li>
+                    </ul>
+                </td>
+            </tr>
+        }
+    </table>
+</div>

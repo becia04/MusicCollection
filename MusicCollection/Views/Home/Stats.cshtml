@@ -1,0 +1,345 @@
+﻿@model MusicCollection.Models.StatsViewModel
+
+@{
+    ViewData["Title"] = "Statystyki";
+}
+
+<h2>Statystyki</h2>
+
+<div>
+    <p>Liczba wszystkich albumów: @Model.TotalAlbums</p>
+    <p>Liczba wszystkich artystów: @Model.TotalArtists</p>
+    <p>Średni rok wydania albumu: @Model.AverageReleaseYear</p>
+    <div style="display: flex; flex-wrap: wrap;">
+        <div style="flex-basis: 50%; padding: 10px;">
+    <h3>Liczba albumów według typu:</h3>
+    <ul>
+        @foreach (var item in Model.AlbumsByType)
+        {
+            <li>@item.TypeName: @item.Count</li>
+        }
+    </ul>
+    </div>
+        <div style="flex-basis: 50%; padding: 10px;">
+    <h3>Liczba albumów według gatunku:</h3>
+    <ul>
+        @foreach (var item in Model.AlbumsByGenre)
+        {
+            <li>@item.TypeName: @item.Count</li>
+        }
+    </ul>
+    </div>
+    </div>
+    <div style="display: flex; flex-wrap: wrap;">
+        <div style="flex-basis: 50%; padding: 10px;">
+            <h2>Najstarszy album:</h2>
+            <table>
+                <tr>
+                    <td>
+                        <img src="@Model.OldestAlbum.Poster" class="imgbtn" height="200" width="200" alt="@Model.OldestAlbum.Title" onclick="showEnlargedImage('@Model.OldestAlbum.Poster')" />
+                    </td>
+                    <td>
+                        <h2>@Model.OldestAlbum.Title</h2>
+                        <h4>@Model.OldestAlbum.Artist.Name</h4>
+                        <ul class="list-group bg-transparent list-group-light" style="border: none;">
+                            <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@Model.OldestAlbum.Type.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none;"><b>Gatunek: </b>@Model.OldestAlbum.Category.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none;"><b>Rok wydania: </b>@Model.OldestAlbum.PublishDate</li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div style="flex-basis: 50%; padding: 10px;">
+            <h2>Najnowszy album:</h2>
+            <table>
+                <tr>
+                    <td>
+                        <img src="@Model.NewestAlbum.Poster" class="imgbtn" height="200" width="200" alt="@Model.NewestAlbum.Title" onclick="showEnlargedImage('@Model.NewestAlbum.Poster')" />
+                    </td>
+                    <td>
+                        <h2>@Model.NewestAlbum.Title</h2>
+                        <h4>@Model.NewestAlbum.Artist.Name</h4>
+                        <ul class="list-group bg-transparent list-group-light" style="border: none;">
+                            <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@Model.NewestAlbum.Type.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@Model.NewestAlbum.Type.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none;"><b>Gatunek: </b>@Model.NewestAlbum.Category.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none;"><b>Rok wydania: </b>@Model.NewestAlbum.PublishDate</li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div style="display: flex; justify-content: center; align-items: center;text-align:center;">
+        <div style="flex-basis: 100%; padding: 10px;">
+            <h3>Najpopularniejsi artyści:</h3>
+            <canvas id="artistChart" width="400" height="400" style="margin: auto;"></canvas>
+        </div>
+    </div>
+    <h2 style="text-align:center;">Najpopularniejsi według typu</h2>
+    <div style="display: flex; justify-content: center;">
+        
+        <div style="flex-basis: 50%; padding: 10px; display: flex; justify-content: center;">
+            <div style="text-align: center;">
+                <h3>LP:</h3>
+                <canvas id="topArtistsType2Chart" width="400" height="400"></canvas>
+            </div>
+        </div>
+        <div style="flex-basis: 50%; padding: 10px; display: flex; justify-content: center;">
+            <div style="text-align: center;">
+                <h3>CD:</h3>
+                <canvas id="topArtistsType1Chart" width="400" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <h2 style="text-align:center">Najpopularniejsi według gatunku</h2>
+    <div style="display: flex; justify-content: center;">
+        
+        <div style="flex-basis: 33.33%; padding: 10px; display: flex; justify-content: center;">
+            <div style="text-align: center;">
+                <h3>Rap:</h3>
+                <canvas id="topArtistsCategoryRap" width="400" height="400"></canvas>
+                </div>
+        </div>
+        <div style="flex-basis: 33.33%; padding: 10px; display: flex; justify-content: center;">
+            <div style="text-align: center;">
+                <h3>Rock:</h3>
+                <canvas id="topArtistsCategoryRock" width="400" height="400"></canvas>
+                </div>
+        </div>
+        <div style="flex-basis: 33.33%; padding: 10px; display: flex; justify-content: center;">
+            <div style="text-align: center;">
+                <h3>Inne:</h3>
+                <canvas id="topArtistsCategoryInne" width="400" height="400"></canvas>
+                </div>
+        </div>
+    </div>
+
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+
+        var colors = [
+            'rgba(255, 99, 132, 0.5)',
+            'rgba(54, 162, 235, 0.5)',
+            'rgba(255, 206, 86, 0.5)',
+            'rgba(75, 192, 192, 0.5)',
+            'rgba(153, 102, 255, 0.5)',
+            'rgba(255, 159, 64, 0.5)',
+            'rgba(255, 0, 0, 0.5)',
+            'rgba(0, 255, 0, 0.5)',
+            'rgba(100, 255, 0, 0.5)',
+        ];
+
+        var artistData = @Html.Raw(ViewBag.AlbumsByArtistJson);
+        var artistNames = artistData.map(a => a.ArtistName);
+        var albumCounts = artistData.map(a => a.AlbumCount);
+
+        var ctx = document.getElementById('artistChart').getContext('2d');
+        ctx.canvas.width = 300;
+        ctx.canvas.height = 300;
+
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: artistNames.slice(0, 8),
+                datasets: [{
+                    label: 'Liczba albumów',
+                    data: albumCounts.slice(0, 8),
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.4', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white',
+                            textShadow: '4px 4px 8px rgba(0, 0, 0, 1)'
+                        }
+                    }
+                }
+            }
+        });
+
+        var artistData = @Html.Raw(ViewBag.TopArtistsType1);
+        var artistNames = artistData.map(a => a.ArtistName);
+        var albumCounts = artistData.map(a => a.AlbumCount);
+
+        var ctx = document.getElementById('topArtistsType1Chart').getContext('2d');
+        ctx.canvas.width = 300;
+        ctx.canvas.height = 300;
+
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: artistNames,
+                datasets: [{
+                    label: 'Liczba albumów',
+                    data: albumCounts,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.4', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white',
+                            textShadow: '4px 4px 8px rgba(0, 0, 0, 1)'
+                        }
+                    }
+                }
+            }
+        });
+
+        var artistData = @Html.Raw(ViewBag.TopArtistsType2);
+        var artistNames = artistData.map(a => a.ArtistName);
+        var albumCounts = artistData.map(a => a.AlbumCount);
+
+        var ctx = document.getElementById('topArtistsType2Chart').getContext('2d');
+        ctx.canvas.width = 300;
+        ctx.canvas.height = 300;
+
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: artistNames,
+                datasets: [{
+                    label: 'Liczba albumów',
+                    data: albumCounts,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.4', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white',
+                            textShadow: '4px 4px 8px rgba(0, 0, 0, 1)'
+                        }
+                    }
+                }
+            }
+        });
+        var artistData = @Html.Raw(ViewBag.TopArtistsCategoryRap);
+        var artistNames = artistData.map(a => a.ArtistName);
+        var albumCounts = artistData.map(a => a.AlbumCount);
+
+        var ctx = document.getElementById('topArtistsCategoryRap').getContext('2d');
+        ctx.canvas.width = 300;
+        ctx.canvas.height = 300;
+
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: artistNames,
+                datasets: [{
+                    label: 'Liczba albumów',
+                    data: albumCounts,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.4', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white',
+                            textShadow: '4px 4px 8px rgba(0, 0, 0, 1)'
+                        }
+                    }
+                }
+            }
+        });
+        var artistData = @Html.Raw(ViewBag.TopArtistsCategoryRock);
+        var artistNames = artistData.map(a => a.ArtistName);
+        var albumCounts = artistData.map(a => a.AlbumCount);
+
+        var ctx = document.getElementById('topArtistsCategoryRock').getContext('2d');
+        ctx.canvas.width = 300;
+        ctx.canvas.height = 300;
+
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: artistNames,
+                datasets: [{
+                    label: 'Liczba albumów',
+                    data: albumCounts,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.4', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white',
+                            textShadow: '4px 4px 8px rgba(0, 0, 0, 1)'
+                        }
+                    }
+                }
+            }
+        });
+        var artistData = @Html.Raw(ViewBag.TopArtistsCategoryInne);
+        var artistNames = artistData.map(a => a.ArtistName);
+        var albumCounts = artistData.map(a => a.AlbumCount);
+
+        var ctx = document.getElementById('topArtistsCategoryInne').getContext('2d');
+        ctx.canvas.width = 300;
+        ctx.canvas.height = 300;
+
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: artistNames,
+                datasets: [{
+                    label: 'Liczba albumów',
+                    data: albumCounts,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.4', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white',
+                            textShadow: '4px 4px 8px rgba(0, 0, 0, 1)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

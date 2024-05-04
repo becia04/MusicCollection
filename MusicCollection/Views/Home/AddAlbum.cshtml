@@ -1,0 +1,99 @@
+﻿@{
+    ViewBag.Title = "Dodaj";
+}
+
+<head>
+    <title>Dodaj nowy album</title>
+</head>
+<h2>Dodaj nowy album</h2>
+<form action="/Home/AddAlbum" method="post" enctype="multipart/form-data">
+    <div style="display: flex; flex-direction: row;">
+        <div style="margin-right: 20px;">
+            <label for="title">Tytuł:</label><br>
+            <input type="text" id="title" name="title" class="dropbtn" style="cursor:text;"><br><br>
+        </div>
+        <div style="margin-right: 20px;">
+            <label for="publishDate">Rok publikacji:</label><br>
+            <input type="number" id="publishDate" name="PublishDate" class="dropbtn" style="cursor:text;" min="1900" max="@DateTime.Now.Year"><br><br>
+        </div>
+
+        <div style="margin-right: 20px;">
+            <label for="poster">Plakat:</label><br>
+            <input type="file" id="poster" name="posterFile" accept=".jpg"><br><br>
+        </div>
+        <div style="margin-right: 20px;">
+            <label for="type">Typ:</label><br>
+            <select id="type" name="typeId" class="dropbtn">
+                @foreach (var type in ViewBag.Types)
+                {
+                    <option value="@type.Id">@type.Name</option>
+                }
+            </select><br><br>
+        </div>
+        <div style="margin-right: 20px;">
+            <label for="category">Gatunek:</label><br>
+            <select id="category" name="categoryId" class="dropbtn">
+                @foreach (var category in ViewBag.Categories)
+                {
+                    <option value="@category.Id">@category.Name</option>
+                }
+            </select><br><br>
+        </div>
+        <div>
+            <label for="artist">Artysta:</label><br>
+            <input type="text" name="artistName" id="artistName" oninput="suggestArtists(this)" class="dropbtn" style="cursor:text;" onchange="addNewArtist(this.value)">
+            <input type="hidden" name="artistId" id="artistId">
+            <div id="suggestions" class="suggestions"></div><br><br>
+        </div>
+    </div>
+
+    <input type="submit" value="Dodaj album" class="dropbtn">
+</form>
+
+<script>
+    function suggestArtists(input) {
+        var suggestionsDiv = document.getElementById('suggestions');
+        var inputValue = input.value;
+
+        if (inputValue.length > 0) {
+            fetch('/Home/GetArtistSuggestions?query=' + inputValue)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionsDiv.innerHTML = '';
+                    data.forEach(artist => {
+                        var option = document.createElement('div');
+                        option.textContent = artist.name;
+                        option.onclick = function () {
+                            input.value = artist.name;
+                            document.getElementById('artistId').value = artist.id;
+                            suggestionsDiv.innerHTML = '';
+                        };
+                        suggestionsDiv.appendChild(option);
+                    });
+                });
+        } else {
+            suggestionsDiv.innerHTML = '';
+        }
+    }
+
+    function addNewArtist(artistName) {
+        fetch('/Home/Add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: artistName })
+        })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('artistId').value = data.id;
+            });
+    }
+
+        // Pobierz aktualny rok
+        var currentYear = new Date().getFullYear();
+
+    // Ustaw maksymalny rok dla pola input
+    document.getElementById("publishYear").setAttribute("max", currentYear);
+
+</script>

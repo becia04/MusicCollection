@@ -1,0 +1,19 @@
+﻿<html>
+<head>
+    <link href="~/css/site.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <title>@ViewData["Title"]</title>
+</head>
+<body style="color:white;">
+    <header class="menu-bar">
+        @(await Component.InvokeAsync("Menu"))
+    </header>
+
+    <main class="main-page" style="text-shadow: 4px 4px 8px rgba(0, 0, 0, 1);">
+        @RenderBody()
+    </main>
+
+
+    @RenderSection("Scripts", false)
+</body>
+</html>

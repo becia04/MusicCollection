@@ -1,5 +1,11 @@
 ﻿@model IEnumerable<MusicCollection.Models.Album>
-
+<style>
+    h1 {
+        font-family: "Jaini", system-ui;
+        font-weight: 400;
+        font-style: normal;
+    }
+</style>
 
 @{
     var albumsByCategory = Model.GroupBy(a => a.Category.Name);
@@ -23,8 +29,8 @@
 
 
                     <ul class="list-group bg-transparent list-group-light" style="border: none;">
-                        <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@album.Type.Name</li>
-                        <li class="list-group-item bg-transparent" style="border: none;"><b>Rok wydania: </b>@album.PublishDate</li>
+                        <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Typ: </b>@album.Type.Name</li>
+                        <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Rok wydania: </b>@album.PublishDate</li>
                     </ul>
                 </td>
             </tr>

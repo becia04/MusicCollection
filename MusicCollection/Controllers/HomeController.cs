@@ -12,7 +12,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
-using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Text;
 
@@ -163,7 +162,7 @@ namespace MusicCollection.Controllers
                 model.ArtistId = existingArtist.Id;
 
                 // Dodanie albumu do bazy danych
-                model.Date = DateTime.Today.ToString("dd.MM.yyyy");
+                model.Date = DateTime.Today.ToString("yyyy.MM.dd");
                 db.Albums.Add(model);
                 db.SaveChanges();
 
@@ -251,42 +250,48 @@ namespace MusicCollection.Controllers
             return View(artistAlbums);
         }
 
+
         public IActionResult Search(string text)
         {
             // Pobierz wszystkie albumy z bazy danych
             IQueryable<Album> albumsQuery = db.Albums.Include(a => a.Artist).Include(a => a.Type).Include(a => a.Category).OrderBy(a => a.Artist.Name).ThenBy(a => a.Title);
 
-            // Wyszukaj po tytule i typie albumu
-            IQueryable<Album> albumsByTitleAndTypeQuery = albumsQuery;
+            // Wyszukaj po tytule albumu
+            IQueryable<Album> albumsByTitleQuery = albumsQuery;
             if (!string.IsNullOrEmpty(text))
             {
-                albumsByTitleAndTypeQuery = albumsByTitleAndTypeQuery.Where(a =>
-                    a.Title.ToLower().Contains(text.ToLower()) ||
-                    a.Type.Name.ToLower().Contains(text.ToLower()));
+                albumsByTitleQuery = albumsByTitleQuery.Where(a => a.Title.ToLower().Contains(text.ToLower()));
             }
-            var searchResultsByTitleAndType = albumsByTitleAndTypeQuery.ToList();
+            var searchResultsByTitle = albumsByTitleQuery.ToList();
 
             // Wyszukaj po nazwie artysty
+            IQueryable<Artist> artistsQuery = db.Artists.OrderBy(a => a.Name);
             IQueryable<Album> albumsByArtistQuery = albumsQuery;
             if (!string.IsNullOrEmpty(text))
             {
-                albumsByArtistQuery = albumsByArtistQuery.Where(a =>
-                    a.Artist.Name.ToLower().Contains(text.ToLower()));
+                artistsQuery = artistsQuery.Where(a => a.Name.ToLower().Contains(text.ToLower()));
+                albumsByArtistQuery = albumsByArtistQuery.Where(a => a.Artist.Name.ToLower().Contains(text.ToLower()));
             }
             var searchResultsByArtist = albumsByArtistQuery.ToList();
+            var artistResults = artistsQuery.ToList();
 
-            // Sprawdź, czy znaleziono tylko jednego artystę
-            var uniqueArtistCount = searchResultsByArtist.Select(a => a.Artist.Name).Distinct().Count();
 
-            // Jeśli znaleziono tylko jednego artystę, przekieruj na stronę artysty
-            if (uniqueArtistCount == 1)
+            // Jeśli znaleziono tylko jednego artystę i nie znaleziono żadnego albumu, przekieruj na stronę artysty
+            if (artistResults.Count == 1 && !searchResultsByTitle.Any())
             {
-                var artistName = searchResultsByArtist.FirstOrDefault()?.Artist?.Name;
+                var artistName = artistResults.FirstOrDefault()?.Name;
                 return RedirectToAction("ArtistAlbums", "Home", new { artistName });
             }
 
+            var allalbums = albumsQuery.ToList().Count;
+            if (searchResultsByTitle.Count == allalbums)
+            {
+                ViewBag.AllAlbums = true;
+            }
+            var uniqueArtists = searchResultsByArtist.Select(a => a.Artist).Distinct().ToList();
             // Wyświetl wyniki wyszukiwania na stronie wyszukiwarki
-            return View("Search", searchResultsByTitleAndType);
+            ViewBag.SearchResultsByArtist = uniqueArtists;
+            return View("Search", searchResultsByTitle);
         }
 
         public IActionResult CategoryAlbums(string categoryName)

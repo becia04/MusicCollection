@@ -1,10 +1,13 @@
 ﻿<html>
+
 <head>
     <link href="~/css/site.css" rel="stylesheet" />
     <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
     <title>@ViewData["Title"]</title>
 </head>
+
 <body style="color:white;">
+    <div class="overlay">
     <header class="menu-bar">
         @(await Component.InvokeAsync("Menu"))
     </header>
@@ -15,5 +18,7 @@
 
 
     @RenderSection("Scripts", false)
+    </div>
 </body>
+
 </html>

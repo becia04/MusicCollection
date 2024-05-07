@@ -1,10 +1,16 @@
-﻿
-<nav class="menu navbar">
+﻿<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jaini&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<div class="navbar_normal">
+<nav class="menu navbar" style="position:relative;">
     <div style="width:60%; display:inline-block;">
-        <a class="dropbtn" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+            <a class="dropbtn" href="@Url.Action("Index", "Home")"><i class="fa fa-home"></i></a>
         <div class="dropdown">
-            <button class="dropbtn">Artyści</button>
-            <div class="dropdown-content">
+                <a class="dropbtn">Artyści</a>
+                <div class="dropdown-content">
                 @foreach (var artist in (IEnumerable<MusicCollection.Models.Artist>)ViewData["Artists"])
                 {
                     <a class="menu-link" href="@Url.Action("ArtistAlbums", "Home", new { artistName = artist.Name })">@artist.Name</a>
@@ -13,7 +19,7 @@
         </div>
 
         <div class="dropdown">
-            <button class="dropbtn">Typy</button>
+            <a class="dropbtn">Typy</a>
             <div class="dropdown-content">
                 @foreach (var type in (IEnumerable<MusicCollection.Models.Type>)ViewData["Types"])
                 {
@@ -23,7 +29,7 @@
         </div>
 
         <div class="dropdown">
-            <button class="dropbtn">Gatunki</button>
+            <a class="dropbtn">Gatunki</a>
             <div class="dropdown-content">
                 @foreach (var category in (IEnumerable<MusicCollection.Models.Category>)ViewData["Categories"])
                 {
@@ -33,16 +39,70 @@
         </div>
         <a href="@Url.Action("RecentAlbums", "Home")" class="dropbtn">Ostatnio dodane</a>
         <a href="@Url.Action("Stats", "Home")" class="dropbtn">Statystyki</a>
-    </div>
+        </div>
+
 
     <div style="vertical-align: top; width: 40%; display: inline-block; text-align:right;">
-        @using (Html.BeginForm("Search", "Home"))
-        {
-            @Html.TextBox("text", null, new { @class = "textbox" })
-            <button type="submit" class="dropbtn">Wyszukaj</button>
-        }
+            @using (Html.BeginForm("Search", "Home"))
+            {
+                @Html.TextBox("text", null, new { @class = "textbox" })
+                <a href="#" onclick="document.forms[0].submit();" class="dropbtn">Wyszukaj</a>
+            }
+
     </div>
 </nav>
+</div>
+
+<div class="navbar_phone">
+    <nav class="menu navbar" style="position:relative;">
+        <div style="width:60%; display:inline-block;">
+            <a class="dropbtn" href="@Url.Action("Index", "Home")"><i class="fa fa-home"></i></a>
+            <div class="dropdown">
+                <a href="#" class="dropbtn">
+                    &#9776;
+                </a>
+                <div class="dropdown-content">
+                    <div class="sub-dropdown">
+                        <a href="#" class="dropbtn">Artyści</a>
+                        <div class="sub-dropdown-content">
+                            @foreach (var artist in (IEnumerable<MusicCollection.Models.Artist>)ViewData["Artists"])
+                            {
+                                <a class="menu-link" href="@Url.Action("ArtistAlbums", "Home", new { artistName = artist.Name })">@artist.Name</a>
+                            }
+                        </div>
+                    </div>
+                        <div class="sub-dropdown">
+                        <a href="#" class="dropbtn">Typy</a>
+                            <div class="sub-dropdown-content">
+                                @foreach (var type in (IEnumerable<MusicCollection.Models.Type>)ViewData["Types"])
+                                {
+                                    <a class="menu-link" href="@Url.Action("TypeAlbums", "Home", new { typeName = type.Name })">@type.Name</a>
+                                }
+                            </div>
+                        </div>
+                            <div class="sub-dropdown">
+                        <a href="#" class="dropbtn">Gatunki</a>
+                                <div class="sub-dropdown-content">
+                                    @foreach (var category in (IEnumerable<MusicCollection.Models.Category>)ViewData["Categories"])
+                                    {
+                                        <a class="menu-link" href="@Url.Action("CategoryAlbums", "Home", new { categoryName = category.Name })">@category.Name</a>
+                                    }
+                                </div>
+                            </div>
+            </div>
+
+        </div>
+            <a href="@Url.Action("RecentAlbums", "Home")" class="dropbtn"><i style="font-size:24px" class="fa">&#xf073;</i></a>
+            <a href="@Url.Action("Stats", "Home")" class="dropbtn"><i style="font-size:24px" class="fa">&#xf080;</i></a>
+        </div>
+
+
+        <div style="vertical-align: top; width: 40%; display: inline-block; text-align:right;">
+            <a href="@Url.Action("Search", "Home")" class="dropbtn"><i style="font-size:24px" class="fa">&#xf002;</i></a>
+
+        </div>
+    </nav>
+</div>
 
 <script>
     // Funkcja wywoływana po kliknięciu na obrazek

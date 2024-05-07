@@ -2,10 +2,41 @@
 @{
     ViewBag.Title = "Szukaj";
 }
+<style>
+    h2 {
+        font-family: "Jaini", system-ui;
+        font-weight: 400;
+        font-style: normal;
+    }
+</style>
 
-@if (Model != null && Model.Any())
+@if(ViewBag.AllAlbums==true)
 {
+    <div style="text-align:center;">
+        @using (Html.BeginForm("Search", "Home", FormMethod.Post, new { id = "searchForm" }))
+        {
+            @Html.TextBox("text", null, new { @class = "textbox" })
+            <a href="#" class="dropbtn" onclick="submitForm()"><i style="font-size:24px" class="fa">&#xf002;</i></a>
+        }
+        
+    </div>
+}
+else if (Model != null && Model.Any())
+{
+    @if (ViewBag.SearchResultsByArtist != null)
+    {
+        <h2>Znalezieni artyści:</h2>
+        <ul>
+            @foreach (var artist in ViewBag.SearchResultsByArtist)
+            {
+                <li>
+                    <a href="@Url.Action("ArtistAlbums", "Home", new { artistName = artist.Name })" class="dropbtn">@artist.Name</a>
+                </li>
+            }
+        </ul>
+    }
     <div>
+        <h2>Znalezione albumy</h2>
         <table>
             @foreach (var album in Model)
             {
@@ -17,9 +48,10 @@
                         <h2>@album.Title</h2>
                         <h4>@album.Artist.Name</h4>
                         <ul class="list-group bg-transparent list-group-light" style="border: none;">
-                            <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@album.Type.Name</li>
-                            <li class="list-group-item bg-transparent" style="border: none;"><b>Rok wydania: </b>@album.PublishDate</li>
-                            <li class="list-group-item bg-transparent" style="border: none;"><b>Gatunek: </b>@album.Category.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Typ: </b>@album.Type.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Gatunek: </b>@album.Category.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Rok wydania: </b>@album.PublishDate</li>
+                            
                         </ul>
                     </td>
                 </tr>
@@ -31,3 +63,9 @@ else
 {
     <p>Brak wyników wyszukiwania.</p>
 }
+
+<script>
+    function submitForm() {
+        document.getElementById("searchForm").submit();
+    }
+</script>

@@ -1,5 +1,11 @@
 ﻿@model IEnumerable<MusicCollection.Models.Album>
-
+<style>
+    h1 {
+        font-family: "Jaini", system-ui;
+        font-weight: 400;
+        font-style: normal;
+    }
+    </style>
 
 @{
     var albumsByType = Model.OrderBy(a => a.Type.Name).GroupBy(a => a.Type.Name);
@@ -24,7 +30,11 @@
 </div>
 @foreach (var group in albumsByType)
 {
-    <h2>@group.Key</h2>
+    <h2 style="font-family:Jaini, system-ui;
+        font-weight: 400;
+        font-style: normal;">
+        @group.Key
+    </h2>
 
     <div>
         <table>
@@ -37,8 +47,8 @@
                 <td>
                     <h2>@album.Title</h2>
                         <ul class="list-group bg-transparent list-group-light" style="border: none;">
-                            <li class="list-group-item bg-transparent" style="border: none;"><b>Gatunek: </b>@album.Category.Name</li>
-                            <li class="list-group-item bg-transparent" style="border: none;"><b>Rok wydania: </b>@album.PublishDate</li>
+                            <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Gatunek: </b>@album.Category.Name</li>
+                            <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Rok wydania: </b>@album.PublishDate</li>
                     </ul>
                 </td>
             </tr>

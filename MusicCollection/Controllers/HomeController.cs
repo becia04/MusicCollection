@@ -362,6 +362,7 @@ namespace MusicCollection.Controllers
                 .Include(a => a.Type)
                 .Include(a => a.Category)
                 .OrderByDescending(a => a.PublishDate)
+                .ThenByDescending(a=>a.Id)
                 .FirstOrDefault();
 
             ViewBag.AlbumsByArtistJson = Newtonsoft.Json.JsonConvert.SerializeObject(albumsByArtist);
@@ -393,6 +394,18 @@ namespace MusicCollection.Controllers
             // Pobieranie najpopularniejszych artystów dla typu 2
             var topArtistsType2 = db.Albums
                 .Where(a => a.TypeId == 2)
+                .GroupBy(a => a.Artist.Name)
+                .Select(g => new AlbumsByArtistViewModel
+                {
+                    ArtistName = g.Key,
+                    AlbumCount = g.Count()
+                })
+                .OrderByDescending(a => a.AlbumCount)
+                .Take(8)
+                .ToList();
+
+            var topArtistsType3 = db.Albums
+                .Where(a => a.TypeId == 3)
                 .GroupBy(a => a.Artist.Name)
                 .Select(g => new AlbumsByArtistViewModel
                 {
@@ -441,6 +454,7 @@ namespace MusicCollection.Controllers
             ViewBag.TopArtistsCategoryRap = Newtonsoft.Json.JsonConvert.SerializeObject(topArtistsCategoryRap);
             ViewBag.TopArtistsType1 = Newtonsoft.Json.JsonConvert.SerializeObject(topArtistsType1);
             ViewBag.TopArtistsType2 = Newtonsoft.Json.JsonConvert.SerializeObject(topArtistsType2);
+            ViewBag.TopArtistsType3 = Newtonsoft.Json.JsonConvert.SerializeObject(topArtistsType3);
 
             return View(statsViewModel);
         }

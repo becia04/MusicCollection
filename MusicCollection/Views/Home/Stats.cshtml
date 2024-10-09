@@ -84,7 +84,6 @@
                         <h4>@Model.NewestAlbum.Artist.Name</h4>
                         <ul class="list-group bg-transparent list-group-light" style="border: none;">
                             <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@Model.NewestAlbum.Type.Name</li>
-                            <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@Model.NewestAlbum.Type.Name</li>
                             <li class="list-group-item bg-transparent" style="border: none;"><b>Gatunek: </b>@Model.NewestAlbum.Category.Name</li>
                             <li class="list-group-item bg-transparent" style="border: none;"><b>Rok wydania: </b>@Model.NewestAlbum.PublishDate</li>
                         </ul>
@@ -102,16 +101,22 @@
     <h2 style="text-align:center;">Najpopularniejsi według typu</h2>
     <div style="display: flex; justify-content: center;">
         
-        <div style="flex-basis: 50%; padding: 10px; display: flex; justify-content: center;">
+        <div style="flex-basis: 33.33%; padding: 10px; display: flex; justify-content: center;">
             <div style="text-align: center;">
                 <h3>LP:</h3>
                 <canvas id="topArtistsType2Chart" width="400" height="400"></canvas>
             </div>
         </div>
-        <div style="flex-basis: 50%; padding: 10px; display: flex; justify-content: center;">
+        <div style="flex-basis: 33.33%; padding: 10px; display: flex; justify-content: center;">
             <div style="text-align: center;">
                 <h3>CD:</h3>
                 <canvas id="topArtistsType1Chart" width="400" height="400"></canvas>
+            </div>
+        </div>
+        <div style="flex-basis: 33.33%; padding: 10px; display: flex; justify-content: center;">
+            <div style="text-align: center;">
+                <h3>Tape:</h3>
+                <canvas id="topArtistsType3Chart" width="400" height="400"></canvas>
             </div>
         </div>
     </div>
@@ -261,6 +266,42 @@
                 }
             }
         });
+
+        var artistData = @Html.Raw(ViewBag.TopArtistsType3);
+        var artistNames = artistData.map(a => a.ArtistName);
+        var albumCounts = artistData.map(a => a.AlbumCount);
+
+        var ctx = document.getElementById('topArtistsType3Chart').getContext('2d');
+        ctx.canvas.width = 300;
+        ctx.canvas.height = 300;
+
+        var myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: artistNames,
+                datasets: [{
+                    label: 'Liczba albumów',
+                    data: albumCounts,
+                    backgroundColor: colors,
+                    borderColor: colors.map(color => color.replace('0.4', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                aspectRatio: 1,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white',
+                            textShadow: '4px 4px 8px rgba(0, 0, 0, 1)'
+                        }
+                    }
+                }
+            }
+        });
+
         var artistData = @Html.Raw(ViewBag.TopArtistsCategoryRap);
         var artistNames = artistData.map(a => a.ArtistName);
         var albumCounts = artistData.map(a => a.AlbumCount);

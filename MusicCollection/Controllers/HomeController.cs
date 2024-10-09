@@ -92,6 +92,8 @@ namespace MusicCollection.Controllers
         public IActionResult AddAlbum(Album model, IFormFile posterFile)
         {
             bool state = true;
+
+            // Walidacja danych albumu
             if (string.IsNullOrEmpty(model.Title))
             {
                 ModelState.AddModelError("Title", "Wpisz tytuł");
@@ -110,6 +112,7 @@ namespace MusicCollection.Controllers
 
             if (state)
             {
+                // Sprawdzanie czy album już istnieje
                 var existingAlbum = db.Albums.FirstOrDefault(a => a.Title == model.Title && a.TypeId == model.TypeId);
                 if (existingAlbum != null)
                 {
@@ -120,62 +123,62 @@ namespace MusicCollection.Controllers
                     return View(model);
                 }
 
-                // Przetwarzanie pliku plakatu
+                // Przetwarzanie pliku plakatu (pozostawiono bez zmian)
                 if (posterFile != null && posterFile.Length > 0)
                 {
-                    // Tworzenie nazwy pliku na podstawie tytułu albumu i typu
                     var selectedType = db.Types.FirstOrDefault(t => t.Id == model.TypeId)?.Name ?? "UnknownType";
                     var fileNameWithoutExtension = $"{RemoveDiacritics(model.Title.Replace(" ", "_")).ToLower()}_{RemoveDiacritics(selectedType.Replace(" ", "_")).ToLower()}";
-
-                    // Usuwanie znaków specjalnych i innych niż litery i cyfry
                     fileNameWithoutExtension = Regex.Replace(fileNameWithoutExtension, "[^a-zA-Z0-9_]", "");
-
-                    // Ustawianie nazwy pliku z rozszerzeniem
                     var fileName = $"{fileNameWithoutExtension}.jpg";
-
-                    // Ustawianie ścieżki docelowej
                     var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "posters", fileName);
-
-                    // Zapisywanie pliku na dysku
                     using (var fileStream = new FileStream(filePath, FileMode.Create))
                     {
                         posterFile.CopyTo(fileStream);
                     }
-
-                    // Ustawianie ścieżki pliku plakatu w modelu albumu
                     model.Poster = "/posters/" + fileName;
                 }
 
-                // Sprawdzenie, czy artysta istnieje w bazie danych
-                var artistName = Request.Form["artistName"].ToString();
-                var existingArtist = db.Artists.FirstOrDefault(a => a.Name == artistName);
-
-                // Jeśli artysta nie istnieje, dodaj nowego artystę do bazy danych
-                if (existingArtist == null)
-                {
-                    existingArtist = new Artist { Name = artistName };
-                    db.Artists.Add(existingArtist);
-                    db.SaveChanges(); // Zapisanie zmian w bazie danych, aby uzyskać nowy identyfikator
-                }
-
-                // Ustawienie identyfikatora artysty w modelu albumu
-                model.ArtistId = existingArtist.Id;
-
                 // Dodanie albumu do bazy danych
                 model.Date = DateTime.Today.ToString("yyyy.MM.dd");
+                model.ArtistId = 23;
                 db.Albums.Add(model);
                 db.SaveChanges();
 
-                // Dodanie relacji do tabeli łączącej ArtistAlbums
-                var albumArtist = new ArtistAlbum
+                var artistIds = Request.Form["artistIds[]"].ToString().Split(',');
+
+                foreach (var artistId in artistIds)
                 {
-                    ArtistId = existingArtist.Id,
-                    AlbumId = model.Id
-                };
-                db.ArtistAlbums.Add(albumArtist);
+                    Artist existingArtist;
+
+                    // Sprawdzenie, czy artysta jest nowy
+                    if (artistId.StartsWith("new-"))
+                    {
+                        // Nowy artysta - dodaj do bazy danych
+                        var newArtistName = artistId.Replace("new-", "");
+                        existingArtist = new Artist { Name = newArtistName };
+                        db.Artists.Add(existingArtist);
+                        db.SaveChanges();
+                    }
+                    else
+                    {
+                        // Istniejący artysta
+                        existingArtist = db.Artists.FirstOrDefault(a => a.Id == int.Parse(artistId));
+                    }
+
+                    // Dodaj relację do tabeli łączącej ArtistAlbums
+                    if (existingArtist != null)
+                    {
+                        var albumArtist = new ArtistAlbum
+                        {
+                            ArtistId = existingArtist.Id,
+                            AlbumId = model.Id
+                        };
+                        db.ArtistAlbums.Add(albumArtist);
+                    }
+                }
                 db.SaveChanges();
 
-                // Aktualizacja nazwy pliku z uwzględnieniem Id
+                // Aktualizacja nazwy pliku plakatu, jeśli album został zapisany
                 if (model.Id != 0)
                 {
                     var selectedType = db.Types.FirstOrDefault(t => t.Id == model.TypeId)?.Name ?? "UnknownType";
@@ -185,12 +188,10 @@ namespace MusicCollection.Controllers
                     var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "posters", fileName);
                     var newFileName = $"{model.Id}_{fileName}";
 
-                    // Zmień nazwę pliku na dysku
                     var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "posters", fileName);
                     var newFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "posters", newFileName);
                     System.IO.File.Move(oldFilePath, newFilePath);
 
-                    // Zaktualizuj ścieżkę pliku plakatu w modelu albumu
                     model.Poster = "/posters/" + newFileName;
                     db.SaveChanges();
                 }
@@ -203,6 +204,7 @@ namespace MusicCollection.Controllers
             ViewBag.Categories = db.Categories.OrderBy(a => a.Name).ToList();
             return View(model);
         }
+
 
 
 

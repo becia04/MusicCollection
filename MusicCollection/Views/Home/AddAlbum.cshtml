@@ -1,6 +1,29 @@
 ﻿@{
     ViewBag.Title = "Dodaj";
 }
+<style>
+    .selected-artists {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .selected-artist {
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        padding: 5px 10px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+    }
+
+    .remove-artist {
+        color: red;
+        margin-left: 10px;
+        cursor: pointer;
+    }
+</style>
 
 <head>
     <title>Dodaj nowy album</title>
@@ -42,8 +65,10 @@
         <div>
             <label for="artist">Artysta:</label><br>
             <input type="text" name="artistName" id="artistName" oninput="suggestArtists(this)" class="dropbtn" style="cursor:text;" onchange="addNewArtist(this.value)">
+            <button id="addNewArtistBtn" type="button" onclick="addNewArtistFromTextbox()" style="display: none; margin-left: 10px;">+</button>
             <input type="hidden" name="artistId" id="artistId">
             <div id="suggestions" class="suggestions"></div><br><br>
+            <div id="selectedArtists" class="selected-artists"></div>
         </div>
     </div>
 
@@ -54,41 +79,67 @@
     function suggestArtists(input) {
         var suggestionsDiv = document.getElementById('suggestions');
         var inputValue = input.value;
+        var addNewArtistBtn = document.getElementById('addNewArtistBtn');
 
         if (inputValue.length > 0) {
             fetch('/Home/GetArtistSuggestions?query=' + inputValue)
                 .then(response => response.json())
                 .then(data => {
                     suggestionsDiv.innerHTML = '';
-                    data.forEach(artist => {
-                        var option = document.createElement('div');
-                        option.textContent = artist.name;
-                        option.onclick = function () {
-                            input.value = artist.name;
-                            document.getElementById('artistId').value = artist.id;
-                            suggestionsDiv.innerHTML = '';
-                        };
-                        suggestionsDiv.appendChild(option);
-                    });
+                    if (data.length > 0) {
+                        // Ukrywamy przycisk plus, jeśli są sugestie
+                        addNewArtistBtn.style.display = 'none';
+                        data.forEach(artist => {
+                            var option = document.createElement('div');
+                            option.textContent = artist.name;
+                            option.onclick = function () {
+                                addArtistToSelected(artist.name, artist.id);
+                                input.value = '';  // Czyszczenie pola tekstowego
+                                suggestionsDiv.innerHTML = '';
+                            };
+                            suggestionsDiv.appendChild(option);
+                        });
+                    } else {
+                        // Pokaż przycisk plus, jeśli brak sugestii
+                        addNewArtistBtn.style.display = 'inline';
+                    }
                 });
         } else {
             suggestionsDiv.innerHTML = '';
+            addNewArtistBtn.style.display = 'none';
         }
     }
 
-    function addNewArtist(artistName) {
-        fetch('/Home/Add', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name: artistName })
-        })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('artistId').value = data.id;
-            });
+    function addNewArtistFromTextbox() {
+        var input = document.getElementById('artistName');
+        var artistName = input.value.trim();
+
+        if (artistName.length > 0) {
+            // Dodanie nowego artysty na liście wybranych
+            addArtistToSelected(artistName, null);  // Dodajemy z `null`, ponieważ to nowy artysta
+            input.value = '';  // Czyszczenie pola tekstowego
+            document.getElementById('addNewArtistBtn').style.display = 'none';
+        }
     }
+
+    function addArtistToSelected(artistName, artistId) {
+        var selectedArtistsDiv = document.getElementById('selectedArtists');
+
+        // Tworzymy nowe pole z nazwą artysty
+        var artistDiv = document.createElement('div');
+        artistDiv.className = 'selected-artist';
+        artistDiv.innerHTML = `
+            ${artistName} <span class="remove-artist" onclick="removeArtist(this)">x</span>
+            <input type="hidden" name="artistIds[]" value="${artistId || 'new-' + artistName}">
+        `;
+
+        selectedArtistsDiv.appendChild(artistDiv);
+    }
+
+    function removeArtist(element) {
+        element.parentNode.remove();
+    }
+
 
         // Pobierz aktualny rok
         var currentYear = new Date().getFullYear();

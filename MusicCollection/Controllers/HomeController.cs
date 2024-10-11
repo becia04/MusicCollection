@@ -28,16 +28,28 @@ namespace MusicCollection.Controllers
 
         public IActionResult Index()
         {
+            // Pobieranie albumów z powiązanymi artystami
             var albums = db.Albums
-                            .Include(a => a.Artist)
-                            .Include(a => a.Type)
-                            .Include(a => a.Category)
-                            .OrderBy(a => a.Artist.Name)
-                            .ThenBy(a => a.Title)
-                            .ToList();
+                            .Include(a => a.ArtistAlbums) // Łączenie z tabelą ArtistAlbums
+                            .ThenInclude(aa => aa.Artist) // Łączenie z tabelą Artists
+                            .Include(a => a.Type)         // Łączenie z tabelą Type
+                            .Include(a => a.Category)     // Łączenie z tabelą Category
+                            .ToList(); // Przeniesienie danych do pamięci
 
-            return View(albums);
+            // Sortowanie albumów na poziomie aplikacji
+            var sortedAlbums = albums
+                                .OrderBy(a => string.Join(", ", a.ArtistAlbums
+                                    .Select(aa => aa.Artist.Name)      // Pobieranie nazw artystów
+                                    .OrderBy(name => name)))           // Sortowanie nazw artystów w albumie alfabetycznie
+                                .ThenBy(a => a.Title)                  // Następnie sortowanie według tytułu albumu
+                                .ToList();
+
+            return View(sortedAlbums);
         }
+
+
+
+
         public IActionResult Privacy()
         {
             return View();
@@ -46,14 +58,23 @@ namespace MusicCollection.Controllers
         public IActionResult RecentAlbums()
         {
             var newestPublishDate = db.Albums.Max(a => a.Date);
-            var newestAlbums = db.Albums
-                .Include (a => a.Artist)
-                .Include(a => a.Type)
-                .Include (a => a.Category)
-                .Where(a => a.Date == newestPublishDate)
-                .OrderBy(a=>a.Artist.Name)
-                .ThenBy(a=>a.Title)
-                .ToList();
+
+            // Pobieranie albumów z powiązanymi artystami
+            var albums = db.Albums
+                            .Include(a => a.ArtistAlbums) // Łączenie z tabelą ArtistAlbums
+                            .ThenInclude(aa => aa.Artist) // Łączenie z tabelą Artists
+                            .Include(a => a.Type)         // Łączenie z tabelą Type
+                            .Include(a => a.Category)     // Łączenie z tabelą Category
+                            .Where(a => a.Date == newestPublishDate)
+                            .ToList(); // Przeniesienie danych do pamięci
+
+            // Sortowanie albumów na poziomie aplikacji
+            var newestAlbums = albums
+                                .OrderBy(a => string.Join(", ", a.ArtistAlbums
+                                    .Select(aa => aa.Artist.Name)      // Pobieranie nazw artystów
+                                    .OrderBy(name => name)))           // Sortowanie nazw artystów w albumie alfabetycznie
+                                .ThenBy(a => a.Title)                  // Następnie sortowanie według tytułu albumu
+                                .ToList();
             return View(newestAlbums);
         }
 
@@ -109,6 +130,14 @@ namespace MusicCollection.Controllers
                 ModelState.AddModelError("PublishYear", "Nieprawidłowy rok publikacji");
                 state = false;
             }
+            var artistIds = Request.Form["artistIds[]"].ToString().Split(',');
+
+            if (artistIds==null)
+            {
+                ModelState.AddModelError("artistIds[]", "Dodaj artystę");
+                state = false;
+            }
+
 
             if (state)
             {
@@ -140,11 +169,8 @@ namespace MusicCollection.Controllers
 
                 // Dodanie albumu do bazy danych
                 model.Date = DateTime.Today.ToString("yyyy.MM.dd");
-                model.ArtistId = 23;
                 db.Albums.Add(model);
                 db.SaveChanges();
-
-                var artistIds = Request.Form["artistIds[]"].ToString().Split(',');
 
                 foreach (var artistId in artistIds)
                 {
@@ -205,9 +231,6 @@ namespace MusicCollection.Controllers
             return View(model);
         }
 
-
-
-
         [HttpGet]
         public IActionResult GetArtistSuggestions(string query)
         {
@@ -240,25 +263,38 @@ namespace MusicCollection.Controllers
 
         public IActionResult ArtistAlbums(string artistName)
         {
-            // Pobieranie wszystkich albumów dla danego artysty
+            // Pobieranie albumów, gdzie wybrany artysta jest wśród artystów albumu
             var artistAlbums = db.Albums
-                                .Include(a => a.Artist)
-                                .Include(a => a.Type)
-                                .Include(a => a.Category)
-                                .Where(a => a.Artist.Name == artistName)
-                                .OrderBy(a => a.Title)
-                                .ToList();
+                                 .Include(a => a.ArtistAlbums)
+                                     .ThenInclude(aa => aa.Artist)
+                                 .Include(a => a.Type)
+                                 .Include(a => a.Category)
+                                 .Where(a => a.ArtistAlbums.Any(aa => aa.Artist.Name == artistName))
+                                 .OrderBy(a => a.Title)
+                                 .ToList();
+
+            // Dodanie ViewBag z nazwą artysty, aby łatwiej można było odwoływać się do tej zmiennej w widoku
+            ViewBag.ArtistName = artistName;
 
             return View(artistAlbums);
         }
 
 
+
         public IActionResult Search(string text)
         {
-            // Pobierz wszystkie albumy z bazy danych
-            IQueryable<Album> albumsQuery = db.Albums.Include(a => a.Artist).Include(a => a.Type).Include(a => a.Category).OrderBy(a => a.Artist.Name).ThenBy(a => a.Title);
+            // Pobierz wszystkie albumy z tabelami powiązanymi
+            IQueryable<Album> albumsQuery = db.Albums
+                                              .Include(a => a.ArtistAlbums)
+                                                  .ThenInclude(aa => aa.Artist)
+                                              .Include(a => a.Type)
+                                              .Include(a => a.Category)
+                                              .OrderBy(a => a.ArtistAlbums
+                                                             .Select(aa => aa.Artist.Name)
+                                                             .FirstOrDefault())
+                                              .ThenBy(a => a.Title);
 
-            // Wyszukaj po tytule albumu
+            // Wyszukiwanie albumów po tytule
             IQueryable<Album> albumsByTitleQuery = albumsQuery;
             if (!string.IsNullOrEmpty(text))
             {
@@ -266,17 +302,16 @@ namespace MusicCollection.Controllers
             }
             var searchResultsByTitle = albumsByTitleQuery.ToList();
 
-            // Wyszukaj po nazwie artysty
+            // Wyszukiwanie artystów, których nazwa pasuje do tekstu
             IQueryable<Artist> artistsQuery = db.Artists.OrderBy(a => a.Name);
-            IQueryable<Album> albumsByArtistQuery = albumsQuery;
             if (!string.IsNullOrEmpty(text))
             {
+                // Filtrujemy tylko artystów, których nazwa zawiera wpisany tekst (ignorując wielkość liter)
                 artistsQuery = artistsQuery.Where(a => a.Name.ToLower().Contains(text.ToLower()));
-                albumsByArtistQuery = albumsByArtistQuery.Where(a => a.Artist.Name.ToLower().Contains(text.ToLower()));
             }
-            var searchResultsByArtist = albumsByArtistQuery.ToList();
-            var artistResults = artistsQuery.ToList();
 
+            // Pobierz wyniki artystów
+            var artistResults = artistsQuery.ToList();
 
             // Jeśli znaleziono tylko jednego artystę i nie znaleziono żadnego albumu, przekieruj na stronę artysty
             if (artistResults.Count == 1 && !searchResultsByTitle.Any())
@@ -285,27 +320,37 @@ namespace MusicCollection.Controllers
                 return RedirectToAction("ArtistAlbums", "Home", new { artistName });
             }
 
-            var allalbums = albumsQuery.ToList().Count;
-            if (searchResultsByTitle.Count == allalbums)
+            // Zapisz wyniki wyszukiwania artystów do ViewBag
+            ViewBag.SearchResultsByArtist = artistResults;
+
+            // Sprawdź, czy wyszukiwanie obejmuje wszystkie albumy
+            var allAlbumsCount = albumsQuery.Count();
+            if (searchResultsByTitle.Count == allAlbumsCount)
             {
                 ViewBag.AllAlbums = true;
             }
-            var uniqueArtists = searchResultsByArtist.Select(a => a.Artist).Distinct().ToList();
-            // Wyświetl wyniki wyszukiwania na stronie wyszukiwarki
-            ViewBag.SearchResultsByArtist = uniqueArtists;
+
             return View("Search", searchResultsByTitle);
         }
 
+
+
         public IActionResult CategoryAlbums(string categoryName)
         {
-            // Pobieranie wszystkich albumów dla danego artysty
-            var categoryAlbums = db.Albums
-                                .Include(a => a.Artist)
-                                .Include(a => a.Type)
-                                .Include(a => a.Category)
-                                .Where(a => a.Category.Name == categoryName)
-                                .OrderBy(a => a.Artist.Name)
-                                .ThenBy(a => a.Title)
+            var albums = db.Albums
+                            .Include(a => a.ArtistAlbums) // Łączenie z tabelą ArtistAlbums
+                            .ThenInclude(aa => aa.Artist) // Łączenie z tabelą Artists
+                            .Include(a => a.Type)         // Łączenie z tabelą Type
+                            .Include(a => a.Category)     // Łączenie z tabelą Category
+                            .Where(a => a.Category.Name == categoryName)
+                            .ToList(); // Przeniesienie danych do pamięci
+
+            // Sortowanie albumów na poziomie aplikacji
+            var categoryAlbums = albums
+                                .OrderBy(a => string.Join(", ", a.ArtistAlbums
+                                    .Select(aa => aa.Artist.Name)      // Pobieranie nazw artystów
+                                    .OrderBy(name => name)))           // Sortowanie nazw artystów w albumie alfabetycznie
+                                .ThenBy(a => a.Title)                  // Następnie sortowanie według tytułu albumu
                                 .ToList();
 
             return View(categoryAlbums);
@@ -313,14 +358,20 @@ namespace MusicCollection.Controllers
 
         public IActionResult TypeAlbums(string typeName)
         {
-            // Pobieranie wszystkich albumów dla danego artysty
-            var typeAlbums = db.Albums
-                                .Include(a => a.Artist)
-                                .Include(a => a.Type)
-                                .Include(a => a.Category)
-                                .Where(a => a.Type.Name == typeName)
-                                .OrderBy(a => a.Artist.Name)
-                                .ThenBy(a => a.Title)
+            var albums = db.Albums
+                            .Include(a => a.ArtistAlbums) // Łączenie z tabelą ArtistAlbums
+                            .ThenInclude(aa => aa.Artist) // Łączenie z tabelą Artists
+                            .Include(a => a.Type)         // Łączenie z tabelą Type
+                            .Include(a => a.Category)     // Łączenie z tabelą Category
+                            .Where(a => a.Type.Name == typeName)
+                            .ToList(); // Przeniesienie danych do pamięci
+
+            // Sortowanie albumów na poziomie aplikacji
+            var typeAlbums = albums
+                                .OrderBy(a => string.Join(", ", a.ArtistAlbums
+                                    .Select(aa => aa.Artist.Name)      // Pobieranie nazw artystów
+                                    .OrderBy(name => name)))           // Sortowanie nazw artystów w albumie alfabetycznie
+                                .ThenBy(a => a.Title)                  // Następnie sortowanie według tytułu albumu
                                 .ToList();
 
             return View(typeAlbums);
@@ -328,47 +379,63 @@ namespace MusicCollection.Controllers
 
         public IActionResult Stats()
         {
+            // Całkowita liczba albumów
             var totalAlbums = db.Albums.Count();
+
+            // Całkowita liczba artystów
             var totalArtists = db.Artists.Count();
+
+            // Średnia data wydania albumów
             var averageReleaseYear = (int)Math.Floor(db.Albums.Average(a => a.PublishDate));
 
+            // Liczba albumów w zależności od typu
             var albumsByType = db.Albums
                 .GroupBy(a => a.Type.Name)
                 .Select(g => new AlbumsByTypeViewModel { TypeName = g.Key, Count = g.Count() })
                 .ToList();
 
-            var albumsByArtist = db.Artists
-        .Select(a => new AlbumsByArtistViewModel
-        {
-            ArtistName = a.Name,
-            AlbumCount = a.Album.Count()
-        })
-        .OrderByDescending(a => a.AlbumCount)
-        .Take(8)
-        .ToList();
+            // Liczba albumów dla każdego artysty
+            var albumsByArtist = db.ArtistAlbums
+                .GroupBy(aa => aa.Artist.Name)
+                .Select(g => new AlbumsByArtistViewModel
+                {
+                    ArtistName = g.Key,
+                    AlbumCount = g.Count()
+                })
+                .OrderByDescending(a => a.AlbumCount)
+                .Take(8)
+                .ToList();
 
+            // Liczba albumów w zależności od gatunku
             var albumsByGenre = db.Albums
                 .GroupBy(a => a.Category.Name)
                 .Select(g => new AlbumsByTypeViewModel { TypeName = g.Key, Count = g.Count() })
                 .ToList();
 
-            var oldestAlbum = db.Albums
-                .Include(a => a.Artist)
-                .Include(a => a.Type)
-                .Include(a => a.Category)
-                .OrderBy(a => a.PublishDate)
-                .FirstOrDefault();
-
             var newestAlbum = db.Albums
-                .Include(a => a.Artist)
-                .Include(a => a.Type)
-                .Include(a => a.Category)
+                .Include(a=>a.Type)
+                .Include(a=>a.Category)
                 .OrderByDescending(a => a.PublishDate)
                 .ThenByDescending(a=>a.Id)
                 .FirstOrDefault();
+            var newestAlbumArtists = db.ArtistAlbums
+                                              .Where(aa => aa.AlbumId == newestAlbum.Id)
+                                              .Select(aa => aa.Artist)
+                                              .ToList();
 
+            var oldestAlbum = db.Albums
+                .Include(a => a.Type)
+                .Include(a => a.Category)
+                .OrderBy(a => a.PublishDate).FirstOrDefault();
+            var oldestAlbumArtists = db.ArtistAlbums
+                                              .Where(aa => aa.AlbumId == oldestAlbum.Id)
+                                              .Select(aa => aa.Artist)
+                                              .ToList();
+
+            // Serializacja danych o albumach według artystów do formatu JSON
             ViewBag.AlbumsByArtistJson = Newtonsoft.Json.JsonConvert.SerializeObject(albumsByArtist);
 
+            // Przygotowanie modelu widoku
             var statsViewModel = new StatsViewModel
             {
                 TotalAlbums = totalAlbums,
@@ -377,13 +444,16 @@ namespace MusicCollection.Controllers
                 AlbumsByType = albumsByType,
                 AlbumsByArtist = albumsByArtist,
                 OldestAlbum = oldestAlbum,
+                OldestAlbumArtists = oldestAlbumArtists,
                 NewestAlbum = newestAlbum,
+                NewestAlbumArtists = newestAlbumArtists,
                 AlbumsByGenre = albumsByGenre
             };
 
-            var topArtistsType1 = db.Albums
-                .Where(a => a.TypeId == 1)
-                .GroupBy(a => a.Artist.Name)
+            // Najpopularniejsi artyści dla typu 1
+            var topArtistsType1 = db.ArtistAlbums
+                .Where(aa => aa.Album.TypeId == 1)
+                .GroupBy(aa => aa.Artist.Name)
                 .Select(g => new AlbumsByArtistViewModel
                 {
                     ArtistName = g.Key,
@@ -393,10 +463,10 @@ namespace MusicCollection.Controllers
                 .Take(8)
                 .ToList();
 
-            // Pobieranie najpopularniejszych artystów dla typu 2
-            var topArtistsType2 = db.Albums
-                .Where(a => a.TypeId == 2)
-                .GroupBy(a => a.Artist.Name)
+            // Najpopularniejsi artyści dla typu 2
+            var topArtistsType2 = db.ArtistAlbums
+                .Where(aa => aa.Album.TypeId == 2)
+                .GroupBy(aa => aa.Artist.Name)
                 .Select(g => new AlbumsByArtistViewModel
                 {
                     ArtistName = g.Key,
@@ -406,9 +476,10 @@ namespace MusicCollection.Controllers
                 .Take(8)
                 .ToList();
 
-            var topArtistsType3 = db.Albums
-                .Where(a => a.TypeId == 3)
-                .GroupBy(a => a.Artist.Name)
+            // Najpopularniejsi artyści dla typu 3
+            var topArtistsType3 = db.ArtistAlbums
+                .Where(aa => aa.Album.TypeId == 3)
+                .GroupBy(aa => aa.Artist.Name)
                 .Select(g => new AlbumsByArtistViewModel
                 {
                     ArtistName = g.Key,
@@ -418,9 +489,10 @@ namespace MusicCollection.Controllers
                 .Take(8)
                 .ToList();
 
-            var topArtistsCategoryRap = db.Albums
-                .Where(a => a.CategoryId == 1)
-                .GroupBy(a => a.Artist.Name)
+            // Najpopularniejsi artyści w gatunku "Rap"
+            var topArtistsCategoryRap = db.ArtistAlbums
+                .Where(aa => aa.Album.CategoryId == 1)
+                .GroupBy(aa => aa.Artist.Name)
                 .Select(g => new AlbumsByArtistViewModel
                 {
                     ArtistName = g.Key,
@@ -429,9 +501,11 @@ namespace MusicCollection.Controllers
                 .OrderByDescending(a => a.AlbumCount)
                 .Take(8)
                 .ToList();
-            var topArtistsCategoryRock = db.Albums
-                .Where(a => a.CategoryId == 2)
-                .GroupBy(a => a.Artist.Name)
+
+            // Najpopularniejsi artyści w gatunku "Rock"
+            var topArtistsCategoryRock = db.ArtistAlbums
+                .Where(aa => aa.Album.CategoryId == 2)
+                .GroupBy(aa => aa.Artist.Name)
                 .Select(g => new AlbumsByArtistViewModel
                 {
                     ArtistName = g.Key,
@@ -440,9 +514,11 @@ namespace MusicCollection.Controllers
                 .OrderByDescending(a => a.AlbumCount)
                 .Take(8)
                 .ToList();
-            var topArtistsCategoryInne = db.Albums
-                .Where(a => a.CategoryId == 3)
-                .GroupBy(a => a.Artist.Name)
+
+            // Najpopularniejsi artyści w gatunku "Inne"
+            var topArtistsCategoryInne = db.ArtistAlbums
+                .Where(aa => aa.Album.CategoryId == 3)
+                .GroupBy(aa => aa.Artist.Name)
                 .Select(g => new AlbumsByArtistViewModel
                 {
                     ArtistName = g.Key,
@@ -451,6 +527,8 @@ namespace MusicCollection.Controllers
                 .OrderByDescending(a => a.AlbumCount)
                 .Take(8)
                 .ToList();
+
+            // Serializacja danych do widoku
             ViewBag.TopArtistsCategoryInne = Newtonsoft.Json.JsonConvert.SerializeObject(topArtistsCategoryInne);
             ViewBag.TopArtistsCategoryRock = Newtonsoft.Json.JsonConvert.SerializeObject(topArtistsCategoryRock);
             ViewBag.TopArtistsCategoryRap = Newtonsoft.Json.JsonConvert.SerializeObject(topArtistsCategoryRap);
@@ -460,5 +538,6 @@ namespace MusicCollection.Controllers
 
             return View(statsViewModel);
         }
+
     }
 }

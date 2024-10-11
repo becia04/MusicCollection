@@ -21,7 +21,7 @@ namespace MusicCollection.ViewComponents
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            var artists = await db.Artists.Where(a => a.Album.Any()).Distinct().OrderBy(a => a.Name).ToListAsync();
+            var artists = await db.Artists.OrderBy(a => a.Name).ToListAsync();
             var types = await db.Types.Distinct().OrderBy(a => a.Name).ToListAsync();
             var categories = await db.Categories.Distinct().ToListAsync();
 

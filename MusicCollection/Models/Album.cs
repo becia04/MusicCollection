@@ -18,9 +18,6 @@ namespace MusicCollection.Models
         public int CategoryId { get; set; }
         public Category Category { get; set; }
 
-        public int ArtistId { get; set; } = 1;
-        public Artist Artist { get; set; }
-
-
+        public ICollection<ArtistAlbum> ArtistAlbums { get; set; }
     }
 }

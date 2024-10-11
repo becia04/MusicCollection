@@ -11,8 +11,10 @@ namespace MusicCollection.Models
             public List<AlbumsByTypeViewModel> AlbumsByGenre { get; set; }
             public List<AlbumsByArtistViewModel> AlbumsByArtist { get; set; }
             public Album OldestAlbum { get; set; }
-            public Album NewestAlbum { get; set; }
-            public List<AlbumsByArtistViewModel> TopArtistsType1 { get; set; }
+        public List<Artist> OldestAlbumArtists { get; set; }
+        public Album NewestAlbum { get; set; }
+        public List<Artist> NewestAlbumArtists { get; set; }
+        public List<AlbumsByArtistViewModel> TopArtistsType1 { get; set; }
             public List<AlbumsByArtistViewModel> TopArtistsType2 { get; set; }
 
     }

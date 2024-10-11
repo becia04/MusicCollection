@@ -5,6 +5,12 @@
         font-weight: 400;
         font-style: normal;
     }
+
+    h2 {
+        font-family: "Jaini", system-ui;
+        font-weight: 400;
+        font-style: normal;
+    }
 </style>
 
 @{
@@ -13,7 +19,6 @@
 }
 
 <h1>@Model.FirstOrDefault()?.Category?.Name</h1>
-
 
 <div>
     <table>
@@ -25,8 +30,17 @@
                 </td>
                 <td>
                     <h2>@album.Title</h2>
-                    <h3>@album.Artist.Name</h3>
-
+                    <!-- Zmiana na wyświetlanie wielu artystów -->
+                    <h4>
+                        @foreach (var artistAlbum in album.ArtistAlbums)
+                        {
+                            <span>@artistAlbum.Artist.Name</span>
+                            @if (artistAlbum != album.ArtistAlbums.Last())
+                            {
+                                <span>x </span> <!-- Dodaj przecinek, jeśli to nie ostatni element -->
+                            }
+                        }
+                    </h4>
 
                     <ul class="list-group bg-transparent list-group-light" style="border: none;">
                         <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Typ: </b>@album.Type.Name</li>

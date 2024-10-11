@@ -62,7 +62,16 @@
                     </td>
                     <td>
                         <h2>@Model.OldestAlbum.Title</h2>
-                        <h4>@Model.OldestAlbum.Artist.Name</h4>
+                        <h4>
+                            @foreach (var artist in Model.OldestAlbumArtists)
+                            {
+                                <span>@artist.Name</span>
+                                @if (artist != Model.OldestAlbumArtists.Last())
+                                {
+                                    <span>x </span> <!-- Dodaj przecinek, jeśli to nie ostatni element -->
+                                }
+                            }
+                        </h4>
                         <ul class="list-group bg-transparent list-group-light" style="border: none;">
                             <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@Model.OldestAlbum.Type.Name</li>
                             <li class="list-group-item bg-transparent" style="border: none;"><b>Gatunek: </b>@Model.OldestAlbum.Category.Name</li>
@@ -81,7 +90,16 @@
                     </td>
                     <td>
                         <h2>@Model.NewestAlbum.Title</h2>
-                        <h4>@Model.NewestAlbum.Artist.Name</h4>
+                        <h4>
+                            @foreach (var artist in Model.NewestAlbumArtists)
+                            {
+                                <span>@artist.Name</span>
+                                @if (artist != Model.NewestAlbumArtists.Last())
+                                {
+                                    <span>x </span> <!-- Dodaj przecinek, jeśli to nie ostatni element -->
+                                }
+                            }
+                        </h4>
                         <ul class="list-group bg-transparent list-group-light" style="border: none;">
                             <li class="list-group-item bg-transparent" style="border: none;"><b>Typ: </b>@Model.NewestAlbum.Type.Name</li>
                             <li class="list-group-item bg-transparent" style="border: none;"><b>Gatunek: </b>@Model.NewestAlbum.Category.Name</li>

@@ -5,21 +5,30 @@
         font-weight: 400;
         font-style: normal;
     }
-    </style>
 
+    h2 {
+        font-family: "Jaini", system-ui;
+        font-weight: 400;
+        font-style: normal;
+    }
+</style>
 @{
+    // Pobranie nazwy artysty z ViewBag (przekazane z kontrolera)
+    var artistName = ViewBag.ArtistName ?? "Unknown Artist";
+
+    // Grupy albumów według typu
     var albumsByType = Model.OrderBy(a => a.Type.Name).GroupBy(a => a.Type.Name);
-    var artistName = Model.FirstOrDefault()?.Artist?.Name ?? "Unknown Artist";
-    ViewBag.Title = artistName;
-}
 
-<h1>@Model.FirstOrDefault()?.Artist?.Name</h1>
-
-@{
+    // Zliczenie albumów według typu
     var albumCountByType = Model.GroupBy(a => a.Type.Name)
                                 .Select(g => new { TypeName = g.Key, AlbumCount = g.Count() })
                                 .OrderBy(g => g.TypeName);
+    ViewBag.Title = artistName;
 }
+
+
+<h1>@artistName</h1> <!-- Wyświetlanie nazwy artysty na podstawie ViewBag -->
+
 <div style="display: flex; flex-wrap: wrap;">
     @foreach (var countByType in albumCountByType)
     {
@@ -28,11 +37,10 @@
         </div>
     }
 </div>
+
 @foreach (var group in albumsByType)
 {
-    <h2 style="font-family:Jaini, system-ui;
-        font-weight: 400;
-        font-style: normal;">
+    <h2 style="font-family:Jaini, system-ui; font-weight: 400; font-style: normal;">
         @group.Key
     </h2>
 
@@ -40,18 +48,33 @@
         <table>
             @foreach (var album in group)
             {
-            <tr>
-                <td>
-                    <img src="@album.Poster" class="imgbtn" height="200" width="200" alt="@album.Title" onclick="showEnlargedImage('@album.Poster')" />
-                </td>
-                <td>
-                    <h2>@album.Title</h2>
+                <tr>
+                    <td>
+                        <img src="@album.Poster" class="imgbtn" height="200" width="200" alt="@album.Title" onclick="showEnlargedImage('@album.Poster')" />
+                    </td>
+                    <td>
+                        <h2>@album.Title</h2>
+
+                        @{
+                            // Pobieranie współpracujących artystów (innych niż wybrany artysta)
+                            var cooperatingArtists = album.ArtistAlbums?
+                            .Where(aa => aa.Artist != null && aa.Artist.Name != artistName)
+                            .Select(aa => aa.Artist.Name)
+                            .ToList() ?? new List<string>();
+                        }
+
+                        <!-- Wyświetlanie informacji o kolaboracji, jeśli są jacyś współpracujący artyści -->
+                        @if (cooperatingArtists.Any())
+                        {
+                            <p><b>Kolaboracja z:</b> @string.Join(", ", cooperatingArtists)</p>
+                        }
+
                         <ul class="list-group bg-transparent list-group-light" style="border: none;">
                             <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Gatunek: </b>@album.Category.Name</li>
                             <li class="list-group-item bg-transparent" style="border: none; z-index: -1;"><b>Rok wydania: </b>@album.PublishDate</li>
-                    </ul>
-                </td>
-            </tr>
+                        </ul>
+                    </td>
+                </tr>
             }
         </table>
     </div>

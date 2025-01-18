@@ -6,17 +6,30 @@
 
 <div class="navbar_normal">
 <nav class="menu navbar" style="position:relative;">
-    <div style="width:60%; display:inline-block;">
+    <div style="width:60%; display:inline-block; margin-bottom:1rem;">
             <a class="dropbtn" href="@Url.Action("Index", "Home")"><i class="fa fa-home"></i></a>
-        <div class="dropdown">
+            <div class="dropdown">
                 <a class="dropbtn">Artyści</a>
                 <div class="dropdown-content">
-                @foreach (var artist in (IEnumerable<MusicCollection.Models.Artist>)ViewData["Artists"])
-                {
-                    <a class="menu-link" href="@Url.Action("ArtistAlbums", "Home", new { artistName = artist.Name })">@artist.Name</a>
-                }
+                    @foreach (var item in (IEnumerable<MusicCollection.Models.ArtistOrGroup>)ViewData["Artists"])
+                    {
+                        if (item.IsGroup)
+                        {
+                            <!-- Link dla grup -->
+                            <a class="menu-link" href="@Url.Action("GroupAlbums", "Home", new { groupName = item.Name })">
+                                @item.Name
+                            </a>
+                        }
+                        else
+                        {
+                            <!-- Link dla artystów -->
+                            <a class="menu-link" href="@Url.Action("ArtistAlbums", "Home", new { artistName = item.Name })">
+                                @item.Name
+                            </a>
+                        }
+                    }
+                </div>
             </div>
-        </div>
 
         <div class="dropdown">
             <a class="dropbtn">Typy</a>
@@ -42,17 +55,17 @@
         </div>
 
 
-    <div style="vertical-align: top; width: 40%; display: inline-block; text-align:right;">
+        <div style="vertical-align: top; width: 40%; display: inline-block; text-align:right; margin-bottom:1rem;">
             @using (Html.BeginForm("Search", "Home"))
             {
-                @Html.TextBox("text", null, new { @class = "textbox" })
+                @Html.TextBox("text", null, new { @class = "textbox", style = "padding: 5px 15px" })
                 <a href="#" onclick="document.forms[0].submit();" class="dropbtn">Wyszukaj</a>
             }
 
     </div>
 </nav>
 </div>
-
+</>
 <div class="navbar_phone">
     <nav class="menu navbar" style="position:relative;">
         <div style="width:60%; display:inline-block;">
@@ -65,9 +78,22 @@
                     <div class="sub-dropdown">
                         <a href="#" class="dropbtn">Artyści</a>
                         <div class="sub-dropdown-content">
-                            @foreach (var artist in (IEnumerable<MusicCollection.Models.Artist>)ViewData["Artists"])
+                            @foreach (var item in (IEnumerable<MusicCollection.Models.ArtistOrGroup>)ViewData["Artists"])
                             {
-                                <a class="menu-link" href="@Url.Action("ArtistAlbums", "Home", new { artistName = artist.Name })">@artist.Name</a>
+                                if (item.IsGroup)
+                                {
+                                    <!-- Link dla grup -->
+                                    <a class="menu-link" href="@Url.Action("GroupAlbums", "Home", new { groupName = item.Name })">
+                                        @item.Name
+                                    </a>
+                                }
+                                else
+                                {
+                                    <!-- Link dla artystów -->
+                                    <a class="menu-link" href="@Url.Action("ArtistAlbums", "Home", new { artistName = item.Name })">
+                                        @item.Name
+                                    </a>
+                                }
                             }
                         </div>
                     </div>
@@ -103,7 +129,6 @@
         </div>
     </nav>
 </div>
-
 <script>
     // Funkcja wywoływana po kliknięciu na obrazek
     function showEnlargedImage(imageSrc) {

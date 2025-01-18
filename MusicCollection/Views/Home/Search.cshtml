@@ -1,4 +1,4 @@
-﻿@model IEnumerable<MusicCollection.Models.Album>
+﻿@model ArtistOrGroupLists
 
 @{
     ViewBag.Title = "Szukaj";
@@ -12,36 +12,42 @@
     }
 </style>
 
-@if (ViewBag.AllAlbums == true)
+<div style="text-align:center;">
+    @using (Html.BeginForm("Search", "Home", FormMethod.Post, new { id = "searchForm" }))
+    {
+        @Html.TextBox("text", null, new { @class = "textbox", placeholder = "Wyszukaj..." })
+        <a href="#" class="dropbtn" onclick="submitForm()"><i style="font-size:24px" class="fa">&#xf002;</i></a>
+    }
+</div>
+
+@if (Model.ArtistsAndGroups.Any())
 {
-    <div style="text-align:center;">
-        @using (Html.BeginForm("Search", "Home", FormMethod.Post, new { id = "searchForm" }))
-        {
-            @Html.TextBox("text", null, new { @class = "textbox" })
-            <a href="#" class="dropbtn" onclick="submitForm()"><i style="font-size:24px" class="fa">&#xf002;</i></a>
-        }
-    </div>
-}
-@if (ViewBag.SearchResultsByArtist != null && ((List<MusicCollection.Models.Artist>)ViewBag.SearchResultsByArtist).Any())
-{
-    <h2>Znalezieni artyści:</h2>
+    <h2>Znalezieni artyści i grupy:</h2>
     <ul>
-        @foreach (var artist in (List<MusicCollection.Models.Artist>)ViewBag.SearchResultsByArtist)
+        @foreach (var result in Model.ArtistsAndGroups)
         {
-            <li>
-                <a href="@Url.Action("ArtistAlbums", "Home", new { artistName = artist.Name })" class="dropbtn">@artist.Name</a>
-            </li>
+            if (result.IsGroup)
+            {
+                <li>
+                    <a href="@Url.Action("GroupAlbums", "Home", new { groupName = result.Name })" class="dropbtn">@result.Name</a>
+                </li>
+            }
+            else
+            {
+                <li>
+                    <a href="@Url.Action("ArtistAlbums", "Home", new { artistName = result.Name })" class="dropbtn">@result.Name</a>
+                </li>
+            }
         }
     </ul>
 }
 
-
-@if (Model != null && Model.Any())
+@if (Model.Albums.Any())
 {
     <div>
         <h2>Znalezione albumy</h2>
         <table>
-            @foreach (var album in Model)
+            @foreach (var album in Model.Albums)
             {
                 <tr>
                     <td>
@@ -50,15 +56,21 @@
                     <td>
                         <h2>@album.Title</h2>
 
-                        <!-- Wyświetlanie artystów powiązanych z albumem -->
                         <p>
                             <b>Artyści: </b>
-                            @foreach (var artistAlbum in album.ArtistAlbums)
+                            @if (album.ArtistAlbums.Any(a => !string.IsNullOrEmpty(a.GroupName)))
                             {
-                                <span>@artistAlbum.Artist.Name</span>
-                                @if (artistAlbum != album.ArtistAlbums.Last())
+                                <span>@album.ArtistAlbums.First(a => !string.IsNullOrEmpty(a.GroupName)).GroupName</span>
+                            }
+                            else
+                            {
+                                @foreach (var artistAlbum in album.ArtistAlbums)
                                 {
-                                    <span>x </span> <!-- Dodaje przecinek pomiędzy artystami -->
+                                    <span>@artistAlbum.Artist.Name</span>
+                                    @if (artistAlbum != album.ArtistAlbums.Last())
+                                    {
+                                        <span>, </span>
+                                    }
                                 }
                             }
                         </p>
@@ -73,10 +85,6 @@
             }
         </table>
     </div>
-}
-else
-{
-    <p>Brak wyników wyszukiwania.</p>
 }
 
 <script>

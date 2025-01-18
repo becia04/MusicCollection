@@ -30,14 +30,21 @@
                 </td>
                 <td>
                     <h2>@album.Title</h2>
-                    <!-- Zmiana na wyświetlanie wielu artystów -->
+
+                    <!-- Wyświetlanie artystów z priorytetem dla GroupName -->
                     <h4>
-                        @foreach (var artistAlbum in album.ArtistAlbums)
+                        @{
+                            var displayArtists = album.ArtistAlbums
+                            .Select(aa => !string.IsNullOrEmpty(aa.GroupName) ? aa.GroupName : aa.Artist.Name)
+                            .Distinct()
+                            .OrderBy(name => name);
+                        }
+                        @foreach (var artist in displayArtists)
                         {
-                            <span>@artistAlbum.Artist.Name</span>
-                            @if (artistAlbum != album.ArtistAlbums.Last())
+                            <span>@artist</span>
+                            @if (artist != displayArtists.Last())
                             {
-                                <span>x </span> <!-- Dodaj przecinek, jeśli to nie ostatni element -->
+                                <span>x </span> <!-- Separator między artystami/grupami -->
                             }
                         }
                     </h4>

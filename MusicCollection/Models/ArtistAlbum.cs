@@ -7,5 +7,6 @@
         public Artist Artist { get; set; }
         public int AlbumId { get; set; }
         public Album Album { get; set; }
+        public string? GroupName { get; set; }
     }
 }

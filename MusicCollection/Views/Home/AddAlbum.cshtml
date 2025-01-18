@@ -23,30 +23,27 @@
         margin-left: 10px;
         cursor: pointer;
     }
+
 </style>
 
-<head>
-    <title>Dodaj nowy album</title>
-</head>
 <h2>Dodaj nowy album</h2>
 <form action="/Home/AddAlbum" method="post" enctype="multipart/form-data">
-    <div style="display: flex; flex-direction: row;">
+    <div style="display: flex; flex-direction: row; flex-wrap: wrap;">
         <div style="margin-right: 20px;">
             <label for="title">Tytuł:</label><br>
-            <input type="text" id="title" name="title" class="dropbtn" style="cursor:text;"><br><br>
+            <input type="text" id="title" name="title" class="textbox" style="cursor:text;"><br><br>
         </div>
         <div style="margin-right: 20px;">
             <label for="publishDate">Rok publikacji:</label><br>
-            <input type="number" id="publishDate" name="PublishDate" class="dropbtn" style="cursor:text;" min="1900" max="@DateTime.Now.Year"><br><br>
+            <input type="number" id="publishDate" name="PublishDate" class="textbox" style="cursor:text;" min="1900" max="@DateTime.Now.Year"><br><br>
         </div>
-
         <div style="margin-right: 20px;">
             <label for="poster">Plakat:</label><br>
             <input type="file" id="poster" name="posterFile" accept=".jpg"><br><br>
         </div>
         <div style="margin-right: 20px;">
             <label for="type">Typ:</label><br>
-            <select id="type" name="typeId" class="dropbtn">
+            <select id="type" name="typeId" class="dropbtn" style="color:black">
                 @foreach (var type in ViewBag.Types)
                 {
                     <option value="@type.Id">@type.Name</option>
@@ -55,12 +52,21 @@
         </div>
         <div style="margin-right: 20px;">
             <label for="category">Gatunek:</label><br>
-            <select id="category" name="categoryId" class="dropbtn">
+            <select id="category" name="categoryId" class="dropbtn" style="color:black">
                 @foreach (var category in ViewBag.Categories)
                 {
                     <option value="@category.Id">@category.Name</option>
                 }
             </select><br><br>
+        </div>
+        <div style="margin-right: 20px;">
+            <label for="isGroup">Grupa?</label><br>
+            <input type="checkbox" id="isGroup" name="isGroup" onchange="toggleGroupField()">
+        </div>
+        <div id="groupNameContainer" style="display: none;">
+            <label for="groupName">Grupa:</label><br>
+            <input type="text" name="groupName" id="groupName" oninput="suggestGroups(this)" class="textbox" style="cursor:text;">
+            <div id="groupSuggestions" class="suggestions"></div><br><br>
         </div>
         <div>
             <label for="artist">Artysta:</label><br>
@@ -71,12 +77,69 @@
             <div id="selectedArtists" class="selected-artists"></div>
         </div>
     </div>
-
     <input type="submit" value="Dodaj album" class="dropbtn">
 </form>
 
 <script>
-    function suggestArtists(input) {
+        function suggestGroups(input) {
+        var groupSuggestionsDiv = document.getElementById('groupSuggestions');
+        var inputValue = input.value;
+
+        if (inputValue.length > 0) {
+            fetch('/Home/GetGroupSuggestions?query=' + inputValue)
+                .then(response => response.json())
+                .then(data => {
+                    groupSuggestionsDiv.innerHTML = '';
+                    if (data.length > 0) {
+                        data.forEach(group => {
+                            var option = document.createElement('div');
+                            option.textContent = group.name;
+                            option.onclick = function () {
+                                selectGroup(group.name, group.artists);
+                                input.value = group.name; // Czyszczenie pola tekstowego
+                                groupSuggestionsDiv.innerHTML = '';
+                            };
+                            groupSuggestionsDiv.appendChild(option);
+                        });
+                    }
+                });
+        } else {
+            groupSuggestionsDiv.innerHTML = '';
+        }
+    }
+
+        function selectGroup(groupName, artists) {
+        // Ustawienie wybranej nazwy grupy w polu tekstowym
+        document.getElementById('groupName').value = groupName;
+        document.getElementById('groupName').value = groupName;
+
+        // Wyczyść poprzednich artystów
+        var selectedArtistsDiv = document.getElementById('selectedArtists');
+        selectedArtistsDiv.innerHTML = '';  // Wyczyszczenie zaznaczonych artystów
+
+        // Dodaj artystów powiązanych z grupą
+        artists.forEach(artist => {
+            addArtistToSelected(artist.name, artist.id);
+        });
+
+        // Opcjonalnie: ukrycie sugestii po wybraniu grupy
+        var groupSuggestionsDiv = document.getElementById('groupSuggestions');
+        groupSuggestionsDiv.innerHTML = '';
+    }
+    // Funkcja przełączająca widoczność pola dla nazwy grupy
+        function toggleGroupField() {
+        const isGroupCheckbox = document.getElementById('isGroup');
+        const groupNameContainer = document.getElementById('groupNameContainer');
+
+        if (isGroupCheckbox.checked) {
+            groupNameContainer.style.display = 'block';  // Pokaż kontener dla nazwy grupy
+        } else {
+            groupNameContainer.style.display = 'none';   // Ukryj kontener
+            document.getElementById('groupName').value = ''; // Czyść wartość pola
+        }
+    }
+
+          function suggestArtists(input) {
         var suggestionsDiv = document.getElementById('suggestions');
         var inputValue = input.value;
         var addNewArtistBtn = document.getElementById('addNewArtistBtn');
@@ -122,17 +185,24 @@
         }
     }
 
-    function addArtistToSelected(artistName, artistId) {
+       function addArtistToSelected(artistName, artistId) {
         var selectedArtistsDiv = document.getElementById('selectedArtists');
 
-        // Tworzymy nowe pole z nazwą artysty
+        // Sprawdzenie, czy artysta już jest na liście
+        var existingArtist = Array.from(selectedArtistsDiv.getElementsByClassName('selected-artist'))
+            .find(artistDiv => artistDiv.textContent.includes(artistName));
+
+        if (existingArtist) {
+            return;  // Jeżeli artysta już istnieje, nie dodawaj ponownie
+        }
+
+        // Tworzenie nowego elementu
         var artistDiv = document.createElement('div');
         artistDiv.className = 'selected-artist';
         artistDiv.innerHTML = `
             ${artistName} <span class="remove-artist" onclick="removeArtist(this)">x</span>
             <input type="hidden" name="artistIds[]" value="${artistId || 'new-' + artistName}">
         `;
-
         selectedArtistsDiv.appendChild(artistDiv);
     }
 
@@ -145,6 +215,5 @@
         var currentYear = new Date().getFullYear();
 
     // Ustaw maksymalny rok dla pola input
-    document.getElementById("publishYear").setAttribute("max", currentYear);
-
+    document.getElementById("publishDate").setAttribute("max", currentYear);
 </script>
